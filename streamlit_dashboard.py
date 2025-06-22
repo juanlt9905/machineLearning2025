@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 
 #Cargar Datos
 
-datos_diabetes = pd.read_csv('datasets/diabetes_012_health_indicators_BRFSS2015.csv')
-#datos_diabetes = pd.read_csv('/home/juan/machineLearning2025/datasets/diabetes_012_health_indicators_BRFSS2015.csv')
+#datos_diabetes = pd.read_csv('datasets/diabetes_012_health_indicators_BRFSS2015.csv')
+datos_diabetes = pd.read_csv('/home/juan/machineLearning2025/datasets/diabetes_012_health_indicators_BRFSS2015.csv')
 #Crear la columna diabetes_01 que unifique prediabetes con diabetes
 datos_diabetes['diabetes_01'] = datos_diabetes['Diabetes_012']
 datos_diabetes['diabetes_01'] = datos_diabetes['diabetes_01'].replace(2,1)
@@ -52,7 +52,8 @@ page = st.sidebar.radio("Ve a la sección:",
     [
         "Introducción", 
         "Análisis Exploratorio", 
-        "Preparación del Modelo" 
+        "Preparación del Modelo",
+        "Selección de características"
         #"Resultados de los Modelos", 
         #"Conclusiones"
     ]
@@ -62,27 +63,37 @@ page = st.sidebar.radio("Ve a la sección:",
 
 # --- Título y Descripción del Dashboard ---
 st.title('Análisis de pacientes con Diabetes en EU')
-st.write("""
-Dataset de origen
 
-El Sistema de Vigilancia de Factores de Riesgo en el Comportamiento (BRFSS) se encarga de realizar 
-encuestas telefónicas relacionadas con la salud de los residentes de EE.UU., relativos a sus comportamientos 
-de riesgos para su salud, como lo son enfermedades crónicas, hábitos de preveención de enfermedades y uso de 
-servicios de salud. 
-
-https://www.cdc.gov/brfss/annual_data/annual_data.htm
-""")
 if page == "Introducción":
 
-    # --- Visualizaciones ---
-    st.header('Distribuciones Demográficas Básicas')
+    st.write("""
+    Dataset de origen
 
-    # Creamos columnas para organizar las gráficas una al lado de la otra.
-    col1, col2 = st.columns(2)
+    El Sistema de Vigilancia de Factores de Riesgo en el Comportamiento (BRFSS) se encarga de realizar 
+    encuestas telefónicas relacionadas con la salud de los residentes de EE.UU., relativos a sus comportamientos 
+    de riesgos para su salud, como lo son enfermedades crónicas, hábitos de preveención de enfermedades y uso de 
+    servicios de salud. 
 
+    https://www.cdc.gov/brfss/annual_data/annual_data.htm
+             
+    Objetivo de trabajar con este dataset:
+
+
+    * ¿Cuáles son las variables más importantes para porder clasificar a los pacientes respecto a riesgo de  diabetes?
+
+    * ¿La información recopilada por la BRFSS puede clasificar pacientes con diabetes y pacientes sanos ?
+    """)
+
+
+elif page =="Análisis Exploratorio":
+
+        # --- Visualizaciones ---
+    st.header('')
+
+    col_a, col_b, col_c = st.columns([1, 2, 1]) # [Espacio, Gráfico, Espacio]
     # --- Gráfica 1: Distribución por Sexo (usando tu código) ---
-    with col1:
-        st.subheader("Distribución del Objetivo Binario (`diabetes_01`)")
+    with col_b:
+        st.subheader("Distribución de la variable objetivo(Diabetes)")
 
         # Crear una figura de Matplotlib
         fig, ax = plt.subplots()
@@ -90,7 +101,7 @@ if page == "Introducción":
         # Contar los valores de la columna 'diabetes_01'
         target_counts = datos_diabetes['diabetes_01'].value_counts()
 
-        # Definir etiquetas claras para el gráfico
+        # Definir etiquetas para el gráfico
         target_labels = {0.0: 'Sin Diabetes', 1.0: 'Diabetes o Pre-Diabetes'}
         target_counts.index = target_counts.index.map(target_labels)
 
@@ -102,26 +113,29 @@ if page == "Introducción":
             colors=sns.color_palette('RdYlGn_r', len(target_counts)) # Paleta de colores
         )
 
-        # Añadir un título al gráfico
-        ax.set_title("Proporción para Clasificación Binaria")
-
-        # Mostrar el gráfico en Streamlit
+        ax.set_title("Distribución de la variable Objetivo")
         st.pyplot(fig)
 
-        # Añadir una explicación contextual
+        
         st.markdown("""
-        **Observación:** Será necesario abordar técnicas de balanceo para poder 
+        **Observación:** Será necesario abordar técnicas de balanceo.
         """)
 
-        st.subheader('Distribución por Sexo')
-        
-        # Creamos la figura de matplotlib
-        fig1, ax1 = plt.subplots(figsize=(8, 6)) # Creamos una figura solo para esta gráfica
+ 
+
+    st.subheader("Análisis por Sexo y Edad")
+
+    
+    col1, col2 = st.columns(2)
+
+    # --- Gráfica 2: Distribución de Edad (usando tu código) ---
+    with col1:
+                # Creamos la figura de matplotlib PASTEL
+        fig1, ax1 = plt.subplots(figsize=(8, 6)) 
 
         sexo_counts = datos_diabetes['sex'].value_counts() # Asumiendo que tu columna se llama 'Sex'
         sexo_labels = {1: "Masculino", 0: "Femenino"}
         
-        # Es más seguro usar un mapeo que no falle si hay valores inesperados
         sexo_counts.index = sexo_counts.index.map(lambda x: sexo_labels.get(x, "No especificado"))
 
         ax1.pie(sexo_counts, labels=sexo_counts.index, autopct='%1.1f%%', 
@@ -130,30 +144,33 @@ if page == "Introducción":
         
         # Usamos st.pyplot() para mostrar la figura de matplotlib en Streamlit
         st.pyplot(fig1)
-
-    # --- Gráfica 2: Distribución de Edad (usando tu código) ---
     with col2:
-        st.subheader('Distribución de Edad por Sexo y Diabetes')
         
-        # Creamos la figura de matplotlib
+        # Creamos la figura de matplotlib BOXPLOT
         fig2, ax2 = plt.subplots(figsize=(8, 6)) # Creamos otra figura
         
         # Mapeamos los valores de diabetes para que las etiquetas sean claras en la leyenda
         diabetes_labels = {0: 'Sin Diabetes', 1: 'Pre-Diabetes', 2: 'Con Diabetes'}
         # Creamos una copia para no modificar el dataframe original al cambiar los labels
         datos_plot = datos_diabetes.copy()
-        datos_plot['diabetes_status'] = datos_plot['diabetes_012'].map(diabetes_labels) # Asumiendo columna 'Diabetes_012'
+        binary_labels = {0.0: 'Sin Diabetes', 1.0: 'Diabetes o Pre-Diabetes'}
+        datos_plot['diabetes_status'] = datos_plot['diabetes_01'].map(binary_labels) #
         
-        sns.boxplot(data=datos_plot, x='sex', y='age', hue='diabetes_01', ax=ax2, palette='viridis') # Asumiendo columnas 'Sex' y 'Age'
+        sns.boxplot(data=datos_plot, x='sex', y='age', hue='diabetes_status', ax=ax2, palette='viridis') # Asumiendo columnas 'Sex' y 'Age'
         ax2.set_xticklabels(['Femenino', 'Masculino'])
         ax2.set_xlabel("Sexo")
         ax2.set_ylabel("Edad")
         ax2.legend(title='Estado de Diabetes')
 
+        target_labels = {0.0: 'Sin Diabetes', 1.0: 'Diabetes o Pre-Diabetes'}
+        target_counts.index = target_counts.index.map(target_labels)
+
+
         # Mostramos la figura en Streamlit
+        
         st.pyplot(fig2)
 
     # --- Mostrando los Datos ---
-    st.header('Vistazo a los Datos Crudos')
-    st.write("Aquí puedes ver una muestra de los datos utilizados para las gráficas.")
-    st.dataframe(datos_diabetes.head())
+    #st.header('Cabeza del dataset')
+    #st.dataframe(datos_diabetes.head())
+
