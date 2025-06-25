@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 
 #Cargar Datos
 
-datos_diabetes = pd.read_csv('datasets/diabetes_012_health_indicators_BRFSS2015.csv')
-#datos_diabetes = pd.read_csv('/home/juan/machineLearning2025/datasets/diabetes_012_health_indicators_BRFSS2015.csv')
+#datos_diabetes = pd.read_csv('datasets/diabetes_012_health_indicators_BRFSS2015.csv')
+datos_diabetes = pd.read_csv('/home/juan/machineLearning2025/datasets/diabetes_012_health_indicators_BRFSS2015.csv')
 #Crear la columna diabetes_01 que unifique prediabetes con diabetes
 datos_diabetes['diabetes_01'] = datos_diabetes['Diabetes_012']
 datos_diabetes['diabetes_01'] = datos_diabetes['diabetes_01'].replace(2,1)
