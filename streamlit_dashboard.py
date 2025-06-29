@@ -33,6 +33,11 @@ datos_diabetes.columns = new_col_names
 
 datos_diabetes = datos_diabetes.rename(columns={'bMI':'bmi'})
 
+#Definicion de datos enteros.
+for col in datos_diabetes.columns:
+    #if datos_diabetes[col].dtype == 'float64':
+    datos_diabetes[col] = datos_diabetes[col].astype(int)
+
 import streamlit as st
 import pandas as pd
 import seaborn as sns
@@ -82,12 +87,59 @@ if page == "Introducción":
     * ¿Cuáles son las variables más importantes para porder clasificar a los pacientes respecto a riesgo de  diabetes?
 
     * ¿La información recopilada por la BRFSS puede clasificar pacientes con diabetes y pacientes sanos ?
+             
+
+    Dataset desbalanceado. 22 variables. Variaable predictora: diabetes.
+
+    Diabetes_012 -> 0 no diabetes, 1 prediabetes, 2 diabetes. Varliable Categórica.
+
+    HighBP-> Hipertension. Variable Boolena.
+
+    HighChol -> COlesterol alto. Variable Booleana.
+
+    CholCheck-> Chequeo de colesterol los ultimos 5 años. Variable Booleana.
+
+    BMI -> Indice de masa corporal. Variable discreta.
+
+    Smoker ->Ha fumado al menos 100 cigarrros en su vida. Variable booleana.
+
+    Stroke -> Derrame cerebral. Variable booleana.
+
+    HeartDiseaseorAttack -> infarto coronario o infarto al miocardio. Variable booleana.
+
+    PhysActivity -> Actividad fisica los ultimos 30 dias. Variable booleana.
+
+    Fruits -> Consume al menos 1 fruta al dia. Variable booleana.
+
+    Veggies -> Consume vegetales al menos 1 vez al dia. Variable booleana.
+
+    HvyAlcoholConsump -> Hombres que toman mas de 14 bebidas alcoholicas por semana, mujeres mas de 7. Variable booleana.
+
+    AnyHealthcare-> Tiene algun seguro médico. Variable booleana.
+
+    NoDocbcCost-> En el ultimo año, no visito a un doctor debido a no poder costear los servicios médicos. Variable booleana.
+
+    GenHlth -> Opinion de salud general, tu salud general es? Escala 1-5. Variable categórica.
+
+    MentHlth -> Por cuantos dias durante el ultimo mes (1-30) no tuviste una salud buena?. Variable categórica. 
+
+    PhysHlth -> Por cuantos dias durante el ultimo mes (1-30) tu salud no fue buena?. Variable categórica.
+
+    DiffWalk -> TIenes dificultades para caminar o subir escaleras?. Variable booleana.
+
+    Sex -> 0=Femenino, 1= Masculino. Variable boolena.
+
+    Age ->  escala del 1-13, 1= 18-24, 2=25-29, 3=30-34, 4=35-39, 5=40-44, 6=45-49, 7=50-54 , 8=55-59 , 9=60-64, 10= 65-69, 11= 70-74, 12=75-79 ,13=80 o mayores. Variable categórica.
+
+    Education -> escala del 1-6, 1=nunca fue a la escuela o solo kinder, 2=grados 1-8, 3= grados 9-11, 4= grado 12 o graduados de HIgh school, 5= 1-3 de universidad, 6= 4 o mas a;os de universidad. Variable categórica.
+
+    Income -> escala 1-8 1= menos de 10,000, 5= menos de 35,000, 8=75,000 o más. Variable categórica.
     """)
 
 
 elif page =="Análisis Exploratorio":
 
-        # --- Visualizaciones ---
+
     st.header('')
 
     col_a, col_b, col_c = st.columns([1, 2, 1]) # [Espacio, Gráfico, Espacio]
@@ -156,7 +208,7 @@ elif page =="Análisis Exploratorio":
         binary_labels = {0.0: 'Sin Diabetes', 1.0: 'Diabetes o Pre-Diabetes'}
         datos_plot['diabetes_status'] = datos_plot['diabetes_01'].map(binary_labels) #
         
-        sns.boxplot(data=datos_plot, x='sex', y='age', hue='diabetes_status', ax=ax2, palette='viridis') # Asumiendo columnas 'Sex' y 'Age'
+        sns.boxplot(data=datos_plot, x='sex', y='age', hue='diabetes_status', ax=ax2, palette='viridis') 
         ax2.set_xticklabels(['Femenino', 'Masculino'])
         ax2.set_xlabel("Sexo")
         ax2.set_ylabel("Edad")
@@ -169,6 +221,168 @@ elif page =="Análisis Exploratorio":
         # Mostramos la figura en Streamlit
         
         st.pyplot(fig2)
+        st.write("""
+            El conjunto de datos de la BRFSS presenta 
+
+
+            """)    
+
+
+    st.subheader("Análisis de BMI")
+    col1, col2 = st.columns(2)
+    #BMI
+    with col1:
+        fig1 = plt.figure(figsize=(8, 6))
+        sexo_labels = {1: "Masculino", 0: "Femenino"}
+
+        diabetes_labels = {0.0: 'Negativo a Diabetes', 1.0: 'Positivo a Diabetes'}
+        # Creamos la nueva columna 'status' usando el mapeo
+        datos_diabetes['status'] = datos_diabetes['diabetes_01'].map(diabetes_labels)     
+        sns.boxplot(x='sex', y='bmi', hue='status', data=datos_diabetes, palette='magma')
+
+    # Ajustar los títulos y etiquetas
+
+        plt.title('Distribución de BMI por Sexo y Diabetes')
+        plt.xlabel('sexo')
+        plt.xticks(ticks=range(len(sexo_labels)), labels=[sexo_labels[sex] for sex in sorted(sexo_labels.keys())])
+        plt.ylabel('bmi')
+
+        # Mostrar la gráfica
+        plt.legend(title='diabetes')
+        st.pyplot(fig1)
+
+        st.write("""
+            Independientemente del sexo, las personas con mayor BMI tienen mayor problabilidad de tener prediabetes o diabetes, según los datos.
+
+        """)
+
+    with col2:
+        fig2 = plt.figure(figsize=(8, 6))
+
+        df_bmi_60 = datos_diabetes[datos_diabetes['bmi']>=60]
+        diabetes_labels = {0.0: 'Negativo a Diabetes', 1.0: 'Positivo a Diabetes'}
+        # Creamos la nueva columna 'status' usando el mapeo
+        df_bmi_60['status'] = df_bmi_60['diabetes_01'].map(diabetes_labels)           
+           
+        ##Grafica de frecuencias para bmi mayor a 60
+        sns.histplot(data=df_bmi_60, x='bmi', hue='status', kde=False) #bins=k, ax=axes[i], multiple='stack')
+            #st.pyplot(fig2)
+
+           # st.write("""
+            #Independientemente del sexo, las personas con mayor BMI tienen mayor problabilidad de tener prediabetes o diabetes, según los datos.
+
+            #""")
+        #3 columnas para los boxplot restantes
+
+
+    st.subheader("Otras variables")
+    col_a, col_b, col_c = st.columns(3) # [Espacio, Gráfico, Espacio]
+
+    with col_a:
+        fig1 = plt.figure(figsize=(8, 6))
+        sexo_labels = {1: "Masculino", 0: "Femenino"}
+
+        diabetes_labels = {0.0: 'Negativo a Diabetes', 1.0: 'Positivo a Diabetes'}
+        # Creamos la nueva columna 'status' usando el mapeo
+        datos_diabetes['status'] = datos_diabetes['diabetes_01'].map(diabetes_labels)     
+        sns.boxplot(x='sex', y='education', hue='status', data=datos_diabetes, palette='viridis')
+
+        # Ajustar los títulos y etiquetas
+
+        plt.title('Distribución de Educación por Sexo y Diabetes')
+        plt.xlabel('sexo')
+        plt.xticks(ticks=range(len(sexo_labels)), labels=[sexo_labels[sex] for sex in sorted(sexo_labels.keys())])
+        plt.ylabel('educación')
+
+        # Mostrar la gráfica
+        plt.legend(title='diabetes')
+        st.pyplot(fig1)
+
+    with col_b:
+        fig1 = plt.figure(figsize=(8, 6))
+        sexo_labels = {1: "Masculino", 0: "Femenino"}
+
+        diabetes_labels = {0.0: 'Negativo a Diabetes', 1.0: 'Positivo a Diabetes'}
+        # Creamos la nueva columna 'status' usando el mapeo
+        datos_diabetes['status'] = datos_diabetes['diabetes_01'].map(diabetes_labels)     
+        sns.boxplot(x='sex', y='income', hue='status', data=datos_diabetes, palette='viridis')
+
+        # Ajustar los títulos y etiquetas
+
+        plt.title('Distribución de Ingresos por Sexo y Diabetes')
+        plt.xlabel('sexo')
+        plt.xticks(ticks=range(len(sexo_labels)), labels=[sexo_labels[sex] for sex in sorted(sexo_labels.keys())])
+        plt.ylabel('Ingresos')
+
+        # Mostrar la gráfica
+        plt.legend(title='diabetes')
+        st.pyplot(fig1)
+
+    with col_c:
+        fig1 = plt.figure(figsize=(8, 6))
+        sexo_labels = {1: "Masculino", 0: "Femenino"}
+
+        diabetes_labels = {0.0: 'NO', 1.0: 'SI'}
+        # Creamos la nueva columna 'status' usando el mapeo
+        datos_diabetes['status'] = datos_diabetes['noDocbcCost'].map(diabetes_labels)     
+        sns.boxplot(x='sex', y='income', hue='status', data=datos_diabetes, palette='viridis')
+
+        # Ajustar los títulos y etiquetas
+
+        plt.title('Distribución de Ingresos por Sexo y noDocbcCost')
+        plt.xlabel('sexo')
+        plt.xticks(ticks=range(len(sexo_labels)), labels=[sexo_labels[sex] for sex in sorted(sexo_labels.keys())])
+        plt.ylabel('Ingresos')
+
+        # Mostrar la gráfica
+        plt.legend(title='noDocbcCost')
+        st.pyplot(fig1)
+
+        st.write("""
+                *noDocbcCost: el paciente no asistio a cita medica el último mes debido a falta de dinero.
+                    
+
+        """)
+    st.write("""
+        * Las personas con un nivel educativo e ingresos más bajos tienden a tener mayor prevalencia de diabetes.
+
+    """)    
+
+    datos_diabetes=datos_diabetes.drop(columns='status')
+
+    correlacion = datos_diabetes.corr()
+    figcorr=plt.figure(figsize=(14, 12)) 
+    rango_a = 0.2
+    rango_b = -0.2
+
+    # Aplicar filtro
+    filtro = (correlacion >= rango_a) | (correlacion <= rango_b)
+    correlacion_filtrada = correlacion.where(filtro)
+
+    sns.heatmap(correlacion_filtrada, annot=True, cbar=True, cmap="RdYlGn")
+    st.pyplot(figcorr)
+
+    st.write("""
+        Variables más correlacionadas ($correlacion > |0.3| $):
+
+        *PhysHlth y  GenHlth: 0.52
+
+        *PhysHlth y MentHlth: 0.34
+
+        *PhysHlth y DiffWalk: 0.47
+
+        *GenHlth y DiffWalk: 0.45
+
+        *Income y Education: 0.42
+
+        *Income y GenHlth: -0.33
+
+        *Income y DiffWalk: -0.3
+
+        *Age vs HighBP: 0.34
+
+    """)
+
 
     # --- Mostrando los Datos ---
     #st.header('Cabeza del dataset')
