@@ -3,14 +3,15 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import pickle
 
 
 
 
 #Cargar Datos
 
-#datos_diabetes = pd.read_csv('datasets/diabetes_012_health_indicators_BRFSS2015.csv')
-datos_diabetes = pd.read_csv('/home/juan/machineLearning2025/datasets/diabetes_012_health_indicators_BRFSS2015.csv')
+datos_diabetes = pd.read_csv('datasets/diabetes_012_health_indicators_BRFSS2015.csv')
+#datos_diabetes = pd.read_csv('/home/juan/machineLearning2025/datasets/diabetes_012_health_indicators_BRFSS2015.csv')
 #Crear la columna diabetes_01 que unifique prediabetes con diabetes
 datos_diabetes['diabetes_01'] = datos_diabetes['Diabetes_012']
 datos_diabetes['diabetes_01'] = datos_diabetes['diabetes_01'].replace(2,1)
@@ -56,7 +57,9 @@ st.sidebar.title("Navegación")
 page = st.sidebar.radio("Ve a la sección:", 
     [
         "Introducción", 
-        "Análisis Exploratorio", 
+        "Análisis Exploratorio",
+        "Balanceo de clases",
+        "Importancia de características", 
         "Preparación del Modelo",
         "Selección de características"
         #"Resultados de los Modelos", 
@@ -383,6 +386,129 @@ elif page =="Análisis Exploratorio":
 
     """)
 
+if page=="Balanceo de clases":
+
+    st.header("Comparación de Técnicas de balanceo")
+    
+    metrics_unbalanced = pd.read_csv('metrics_logreg_unbalanced.csv', index_col=0)
+    metrics_smote = pd.read_csv('metrics_logreg_SMOTE.csv', index_col=0)
+    metrics_ros = pd.read_csv('metrics_logreg_RandomOverSampler.csv', index_col=0)
+
+    # --- Creación de la Tabla Comparativa ---
+    summary_df = pd.concat([
+        metrics_unbalanced['test'],
+        metrics_smote['test'],
+        metrics_ros['test']
+    ], axis=1)
+        
+    summary_df.columns = ['Datos Desbalanceados', 'SMOTE', 'RandomOverSampler']
+
+    st.subheader("Tabla Comparativa de Rendimiento (en Test)")
+    st.dataframe(summary_df)
+
+    st.markdown("""
+    **Se observa una ligera mejora en F1 con técnicas de balanceo como SMOTE Y Random OverSampler** 
+    """)
+
+    st.divider()
+
+        # --- Graficas
+    st.subheader("Visualización por Caso")
+
+    with st.expander("Ver Gráficas para Datos Desbalanceados"):
+        try:
+            with open('fig_logreg_unbalanced.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'figure_logreg_unbalanced.pkl'.")
+
+    with st.expander("Ver Gráficas para SMOTE"):
+        try:
+            with open('fig_logreg_SMOTE.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'figure_logreg_SMOTE.pkl'.")
+
+    with st.expander("Ver Gráficas para RandomOverSampler"):
+        try:
+            with open('fig_logreg_RandomOverSampler.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'fig_logreg_RandomOverSampler.pkl'.")
+elif page=="Importancia de características":
+
+
+    scenario_choice = st.selectbox(
+        "Selecciona el escenario para analizar:",
+        ("Sin Balanceo (Datos Originales)", "Con Balanceo (RandomOverSampler)")
+    )
+
+    # --- Lógica para cargar los archivos correctos ---
+    if scenario_choice == "Sin Balanceo (Datos Originales)":
+        features_file = 'feature_importances_extratreeclassificator.csv'
+        results_file = 'results_extratreeclassificator.csv'
+    else: # Con Balanceo
+        features_file = 'feature_importances_extratreeclassificator_RandOverSampler.csv'
+        results_file = 'results_extratreeclassificator_RandOverSampler.csv'
+
+    try:
+        # Cargar los datos desde los archivos CSV
+        feature_importances = pd.read_csv(features_file)
+        results_df = pd.read_csv(results_file)
+
+        st.subheader(f"Resultados para: {scenario_choice}")
+
+        # --- Visualización 1: Gráfico de Barras de Importancia ---
+        top_features = feature_importances.head(15)
+
+        fig1, ax1 = plt.subplots(figsize=(12, 8))
+        sns.barplot(x="Importance", y="Feature", data=top_features, palette="rocket", ax=ax1)
+        ax1.set_title("Top 15 Características Más Predictivas", fontsize=16)
+        ax1.set_xlabel("Importancia (calculada con ExtraTrees)", fontsize=12)
+        ax1.set_ylabel("Característica", fontsize=12)
+        plt.tight_layout()
+        st.pyplot(fig1)
+        
+        st.divider()
+
+        # --- Visualización 2: Gráfico de Líneas de Rendimiento vs. N° de Características ---
+        st.subheader("Búsqueda del Número Óptimo de Características")
+
+        col1, col2 = st.columns([2, 1])
+
+        with col1:
+            fig2, ax2 = plt.subplots(figsize=(10, 6))
+            # Usaremos la columna 'F1' que ya habías calculado
+            metric_to_plot = 'F1'
+            ax2.plot(results_df["Number of Features"], results_df[metric_to_plot], marker="o", linestyle="--")
+            ax2.set_xlabel("Número de Características Utilizadas")
+            ax2.set_ylabel(f"{metric_to_plot} Score")
+            ax2.set_title(f"Rendimiento ({metric_to_plot}) vs. Número de Características")
+            
+            # Encontrar y marcar el punto óptimo basado en F1
+            optimal_row = results_df.loc[results_df[metric_to_plot].idxmax()]
+            optimal_num = int(optimal_row["Number of Features"])
+            max_metric = optimal_row[metric_to_plot]
+            
+            ax2.axvline(x=optimal_num, color="r", linestyle="--", label=f"Óptimo: {optimal_num} feats.")
+            ax2.legend()
+            st.pyplot(fig2)
+
+        with col2:
+            st.write("") # Espacio para alinear
+            st.metric(
+                label=f"Número Óptimo de Características (por {metric_to_plot})",
+                value=f"{optimal_num}"
+            )
+            st.metric(
+                label=f"{metric_to_plot} Score Máximo",
+                value=f"{max_metric:.4f}"
+            )
+    except FileNotFoundError as e:
+        st.error(f"Error: No se encontró el archivo necesario: {e.filename}")
 
     # --- Mostrando los Datos ---
     #st.header('Cabeza del dataset')
