@@ -10,8 +10,8 @@ import pickle
 
 #Cargar Datos
 
-datos_diabetes = pd.read_csv('datasets/diabetes_012_health_indicators_BRFSS2015.csv')
-#datos_diabetes = pd.read_csv('/home/juan/machineLearning2025/datasets/diabetes_012_health_indicators_BRFSS2015.csv')
+#datos_diabetes = pd.read_csv('datasets/diabetes_012_health_indicators_BRFSS2015.csv')
+datos_diabetes = pd.read_csv('/home/juan/machineLearning2025/datasets/diabetes_012_health_indicators_BRFSS2015.csv')
 #Crear la columna diabetes_01 que unifique prediabetes con diabetes
 datos_diabetes['diabetes_01'] = datos_diabetes['Diabetes_012']
 datos_diabetes['diabetes_01'] = datos_diabetes['diabetes_01'].replace(2,1)
@@ -60,9 +60,8 @@ page = st.sidebar.radio("Ve a la sección:",
         "Análisis Exploratorio",
         "Balanceo de clases",
         "Importancia de características", 
-        "Preparación del Modelo",
-        "Selección de características"
-        #"Resultados de los Modelos", 
+        "Resultados: Random Forest"
+        #"Resultados de los Modelos"
         #"Conclusiones"
     ]
 )
@@ -509,6 +508,71 @@ elif page=="Importancia de características":
             )
     except FileNotFoundError as e:
         st.error(f"Error: No se encontró el archivo necesario: {e.filename}")
+
+elif page == "Resultados: Random Forest":
+    st.header("Random Forest")
+    st.write("""
+
+    A continuación, comparamos su rendimiento en tres escenarios clave:
+    1.  **Datos Desbalanceados:**
+    2.  **Balanceo con RandomOverSampler:**
+    3.  **4 mejores características usando RandomOverSampler :** 
+    """)
+
+    # Cargar datos
+    try:
+        metrics_rf_unbalanced = pd.read_csv('metrics_RandForest_unbalanced.csv', index_col=0)
+        metrics_rf_ros = pd.read_csv('metrics_RandForest_RandOvSampler.csv', index_col=0)
+        metrics_rf_best4 = pd.read_csv('metrics_RandForest_RandOvSampler_best4.csv', index_col=0)
+
+        # concatenar graficas
+        summary_rf_df = pd.concat([
+            metrics_rf_unbalanced['test'],
+            metrics_rf_ros['test'],
+            metrics_rf_best4['test']
+        ], axis=1)
+        
+        # Renombramos las columnas para mayor claridad
+        summary_rf_df.columns = ['RF Desbalanceado', 'RF con RandomOverSampler', 'RF con RandomOverSampler (Top 4)']
+
+        st.subheader("Tabla comparativa de rendimiento de Random Forest (en Test)")
+        st.dataframe(summary_rf_df)
+
+        st.markdown("""
+        
+        """)
+
+    except FileNotFoundError:
+        st.error("Error al cargar los archivos de métricas de Random Forest. Asegúrate de que todos los archivos .csv estén en tu repositorio de GitHub.")
+
+    st.divider()
+
+    # Sección de las graficas
+    st.subheader("Visualización detallada escenario de Random Forest")
+
+    with st.expander("Ver gráficas para RF con datos desbalanceados"):
+        try:
+            with open('fig_RandForest_unbalanced.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'fig_RandForest_unbalanced.pkl'.")
+
+    with st.expander("Ver Gráficas para RF con RandomOverSampler"):
+        try:
+            with open('fig_RandForest_RandOvSampler.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'fig_RandForest_RandOvSampler.pkl'.")
+
+    with st.expander("Ver gráficas para RF balanceado (Top 4)"):
+        try:
+            with open('fig_RandForest_RandOvSampler_best4.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'fig_RandForest_RandOvSampler_best4.pkl'.")
 
     # --- Mostrando los Datos ---
     #st.header('Cabeza del dataset')

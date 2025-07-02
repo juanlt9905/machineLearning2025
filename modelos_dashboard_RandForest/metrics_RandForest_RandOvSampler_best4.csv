@@ -1,0 +1,5 @@
+,train,test
+Exactitud,0.74,0.7
+F1,0.75,0.45
+APS,0.79,0.41
+ROC AUC,0.82,0.8
