@@ -60,7 +60,9 @@ page = st.sidebar.radio("Ve a la sección:",
         "Análisis Exploratorio",
         "Balanceo de clases",
         "Importancia de características", 
-        "Resultados: Random Forest"
+        "Resultados: Árboles de desición",
+        "Resultados: Random Forest",
+        "Resultados: Perceptrón multicapa"
         #"Resultados de los Modelos"
         #"Conclusiones"
     ]
@@ -509,11 +511,11 @@ elif page=="Importancia de características":
     except FileNotFoundError as e:
         st.error(f"Error: No se encontró el archivo necesario: {e.filename}")
 
-elif page == "Resultados: Random Forest":
-    st.header("Random Forest")
+elif page == "Resultados: Árboles de desición":
+    st.header("Árboles de desición")
     st.write("""
 
-    A continuación, comparamos su rendimiento en tres escenarios clave:
+    A continuación, comparamos su rendimiento en tres casos:
     1.  **Datos Desbalanceados:**
     2.  **Balanceo con RandomOverSampler:**
     3.  **4 mejores características usando RandomOverSampler :** 
@@ -521,9 +523,70 @@ elif page == "Resultados: Random Forest":
 
     # Cargar datos
     try:
-        metrics_rf_unbalanced = pd.read_csv('metrics_RandForest_unbalanced.csv', index_col=0)
-        metrics_rf_ros = pd.read_csv('metrics_RandForest_RandOvSampler.csv', index_col=0)
-        metrics_rf_best4 = pd.read_csv('metrics_RandForest_RandOvSampler_best4.csv', index_col=0)
+        metrics_dt_unbalanced = pd.read_csv('modelos_dashboard_dt/metrics_dt_unbalanced.csv', index_col=0)
+        metrics_dt_ros = pd.read_csv('modelos_dashboard_dt/metrics_dt_RandOvSamp.csv', index_col=0)
+        metrics_dt_best4 = pd.read_csv('modelos_dashboard_dt/metrics_dt_RandOvSamp_best4.csv', index_col=0)
+
+        # concatenar graficas
+        summary_dt_df = pd.concat([
+            metrics_dt_unbalanced['test'],
+            metrics_dt_ros['test'],
+            metrics_dt_best4['test']
+        ], axis=1)
+        
+        # Renombramos las columnas para mayor claridad
+        summary_dt_df.columns = ['DT Desbalanceado', 'DT con RandomOverSampler', 'DT con RandomOverSampler (Top 4)']
+
+        st.subheader("Tabla comparativa de rendimiento de Árboles de desición (en Test)")
+        st.dataframe(summary_dt_df)
+
+    except FileNotFoundError:
+        st.error("Error al cargar los archivos de métricas de DT. Asegúrate de que todos los archivos .csv estén en tu repositorio de GitHub.")
+
+    st.divider()
+
+    # Sección de las graficas
+    st.subheader("Visualización detallada escenario de Árboles de desición")
+
+    with st.expander("Ver gráficas para DT con datos desbalanceados"):
+        try:
+            with open('modelos_dashboard_dt/fig_dt_unbalanced.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'fig_dt_unbalanced.pkl'.")
+
+    with st.expander("Ver Gráficas para árboles de desición con RandomOverSampler"):
+        try:
+            with open('modelos_dashboard_dt/fig_dt_RandOvSamp.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'fig_dt_RandOvSamp.pkl'.")
+
+    with st.expander("Ver gráficas para DT balanceado (Top 4)"):
+        try:
+            with open('modelos_dashboard_dt/fig_dt_RandOvSamp_best4.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'fig_dt_RandOvSamp_best4.pkl'.")
+
+elif page == "Resultados: Random Forest":
+    st.header("Random Forest")
+    st.write("""
+
+    A continuación, comparamos su rendimiento en tres casos:
+    1.  **Datos Desbalanceados:**
+    2.  **Balanceo con RandomOverSampler:**
+    3.  **4 mejores características usando RandomOverSampler :** 
+    """)
+
+    # Cargar datos
+    try:
+        metrics_rf_unbalanced = pd.read_csv('modelos_dashboard_RandForest/metrics_RandForest_unbalanced.csv', index_col=0)
+        metrics_rf_ros = pd.read_csv('modelos_dashboard_RandForest/metrics_RandForest_RandOvSampler.csv', index_col=0)
+        metrics_rf_best4 = pd.read_csv('modelos_dashboard_RandForest/metrics_RandForest_RandOvSampler_best4.csv', index_col=0)
 
         # concatenar graficas
         summary_rf_df = pd.concat([
@@ -552,7 +615,7 @@ elif page == "Resultados: Random Forest":
 
     with st.expander("Ver gráficas para RF con datos desbalanceados"):
         try:
-            with open('fig_RandForest_unbalanced.pkl', 'rb') as f:
+            with open('modelos_dashboard_RandForest/fig_RandForest_unbalanced.pkl', 'rb') as f:
                 fig = pickle.load(f)
                 st.pyplot(fig)
         except FileNotFoundError:
@@ -560,7 +623,7 @@ elif page == "Resultados: Random Forest":
 
     with st.expander("Ver Gráficas para RF con RandomOverSampler"):
         try:
-            with open('fig_RandForest_RandOvSampler.pkl', 'rb') as f:
+            with open('modelos_dashboard_RandForest/fig_RandForest_RandOvSampler.pkl', 'rb') as f:
                 fig = pickle.load(f)
                 st.pyplot(fig)
         except FileNotFoundError:
@@ -568,11 +631,77 @@ elif page == "Resultados: Random Forest":
 
     with st.expander("Ver gráficas para RF balanceado (Top 4)"):
         try:
-            with open('fig_RandForest_RandOvSampler_best4.pkl', 'rb') as f:
+            with open('modelos_dashboard_RandForest/fig_RandForest_RandOvSampler_best4.pkl', 'rb') as f:
                 fig = pickle.load(f)
                 st.pyplot(fig)
         except FileNotFoundError:
             st.warning("No se encontró el archivo 'fig_RandForest_RandOvSampler_best4.pkl'.")
+
+elif page == "Resultados: Perceptrón multicapa":
+    st.header("Redes neuronales")
+    st.write("""
+
+    A continuación, comparamos su rendimiento en tres casos:
+    1.  **Datos Desbalanceados:**
+    2.  **Balanceo con RandomOverSampler:**
+    3.  **4 mejores características usando RandomOverSampler :** 
+    """)
+
+    # Cargar datos
+    try:
+        metrics_nn_unbalanced = pd.read_csv('modelos_dashboard_redes/metrics_NN_unbalanced.csv', index_col=0)
+        metrics_nn_ros = pd.read_csv('modelos_dashboard_redes/metrics_NN_RandOvSampler.csv', index_col=0)
+        metrics_nn_best4 = pd.read_csv('modelos_dashboard_redes/metrics_NN_RandOvSampler_best4.csv', index_col=0)
+
+        # concatenar graficas
+        summary_nn_df = pd.concat([
+            metrics_nn_unbalanced['test'],
+            metrics_nn_ros['test'],
+            metrics_nn_best4['test']
+        ], axis=1)
+        
+        # Renombramos las columnas para mayor claridad
+        summary_nn_df.columns = ['PM Desbalanceado', 'PM con RandomOverSampler', 'PM con RandomOverSampler (Top 4)']
+
+        st.subheader("Tabla comparativa de rendimiento de Perceptrón Multicapa (en Test)")
+        st.dataframe(summary_nn_df)
+
+        st.markdown("""
+        
+        """)
+
+    except FileNotFoundError:
+        st.error("Error al cargar los archivos de métricas de NN. Asegúrate de que todos los archivos .csv estén en tu repositorio de GitHub.")
+
+    st.divider()
+
+    # Sección de las graficas
+    st.subheader("Visualización detallada escenario de Perceptrón multicapa")
+
+    with st.expander("Ver gráficas para Perceptrón multicapa con datos desbalanceados"):
+        try:
+            with open('modelos_dashboard_redes/fig_NN_unbalanced.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'fig_NN_unbalanced.pkl'.")
+
+    with st.expander("Ver Gráficas para PM con RandomOverSampler"):
+        try:
+            with open('modelos_dashboard_redes/fig_NN_RandOvSampler.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'fig_NN_RandOvSampler.pkl'.")
+
+    with st.expander("Ver gráficas para Perceptrón multicapa balanceado (Top 4)"):
+        try:
+            with open('modelos_dashboard_redes/fig_NN_RandOvSampler_best4.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'fig_NN_RandOvSampler_best4.pkl'.")
+
 
     # --- Mostrando los Datos ---
     #st.header('Cabeza del dataset')
