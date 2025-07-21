@@ -60,11 +60,12 @@ page = st.sidebar.radio("Ve a la sección:",
         "Análisis Exploratorio",
         "Balanceo de clases",
         "Importancia de características", 
-        "Resultados: Árboles de desición",
+        "Resultados: Árboles de decisión",
         "Resultados: Random Forest",
-        "Resultados: Perceptrón multicapa"
-        #"Resultados de los Modelos"
-        #"Conclusiones"
+        "Resultados: Perceptrón multicapa",
+        "Resultados: Random Forest balanceado",
+        "Resultados: XGBoost",
+        "Conclusiones Generales"
     ]
 )
 
@@ -405,6 +406,7 @@ if page=="Balanceo de clases":
     summary_df.columns = ['Datos Desbalanceados', 'SMOTE', 'RandomOverSampler']
 
     st.subheader("Tabla Comparativa de Rendimiento (en Test)")
+    st.markdown("Se implementan algunas técnicas de balanceo, y se evalua utilizando una Regresión Logística.")
     st.dataframe(summary_df)
 
     st.markdown("""
@@ -439,8 +441,17 @@ if page=="Balanceo de clases":
                 st.pyplot(fig)
         except FileNotFoundError:
             st.warning("No se encontró el archivo 'fig_logreg_RandomOverSampler.pkl'.")
+
+    st.markdown("Observaciones:\n\n" \
+                
+                "* Tanto en SMOTE como en Random Over Sampler, se observa un sobreentrenamiento en las gráficas de F1 y PRC, indicando que no se puede generalizar los patrones de la clase minoritaria.\n\n" \
+                "* El umbral de decisión de 0.5 (punto rojo) se desplazó a la derecha en la curva de PRC, para ambos metódos de balanceo, es decir, aumento recall en ambos casos." \
+                "Esto es un indicador de que disminuyeron los Falsos negativos, un tipo de error que es importante mantener controlado en los casos médicos. ")
+
 elif page=="Importancia de características":
 
+    st.markdown("Utilizamos el modelo de ExtraTreeClassificator, para asignarle una importancia a cada característica en base a su aportación en la reducción de impureza." \
+    "  Entrenamos un modelo agregando características, empezando con las de mayor importancia, hasta maximixar F1.")
 
     scenario_choice = st.selectbox(
         "Selecciona el escenario para analizar:",
@@ -508,36 +519,41 @@ elif page=="Importancia de características":
                 label=f"{metric_to_plot} Score Máximo",
                 value=f"{max_metric:.4f}"
             )
+        st.markdown("Después de aplicar técnicas de balanceo, se necesitaron menos características para maximizar F1.")
+
     except FileNotFoundError as e:
         st.error(f"Error: No se encontró el archivo necesario: {e.filename}")
-
-elif page == "Resultados: Árboles de desición":
-    st.header("Árboles de desición")
+        
+elif page == "Resultados: Árboles de decisión":
+    st.header("Árboles de decisión")
     st.write("""
 
     A continuación, comparamos su rendimiento en tres casos:
     1.  **Datos Desbalanceados:**
     2.  **Balanceo con RandomOverSampler:**
-    3.  **4 mejores características usando RandomOverSampler :** 
+    3. **Balanceo con SMOTE**
+    4.  **4 mejores características usando RandomOverSampler :** 
     """)
 
     # Cargar datos
     try:
         metrics_dt_unbalanced = pd.read_csv('modelos_dashboard_dt/metrics_dt_unbalanced.csv', index_col=0)
         metrics_dt_ros = pd.read_csv('modelos_dashboard_dt/metrics_dt_RandOvSamp.csv', index_col=0)
+        metrics_dt_smote = pd.read_csv('modelos_dashboard_dt/metrics_dt_SMOTE.csv', index_col=0)
         metrics_dt_best4 = pd.read_csv('modelos_dashboard_dt/metrics_dt_RandOvSamp_best4.csv', index_col=0)
 
         # concatenar graficas
         summary_dt_df = pd.concat([
             metrics_dt_unbalanced['test'],
             metrics_dt_ros['test'],
+            metrics_dt_smote['test'],
             metrics_dt_best4['test']
         ], axis=1)
         
         # Renombramos las columnas para mayor claridad
-        summary_dt_df.columns = ['DT Desbalanceado', 'DT con RandomOverSampler', 'DT con RandomOverSampler (Top 4)']
+        summary_dt_df.columns = ['DT Desbalanceado', 'DT con RandomOverSampler','DT con SMOTE', 'DT con RandomOverSampler (Top 4)']
 
-        st.subheader("Tabla comparativa de rendimiento de Árboles de desición (en Test)")
+        st.subheader("Tabla comparativa de rendimiento de Árboles de decisión (en Test)")
         st.dataframe(summary_dt_df)
 
     except FileNotFoundError:
@@ -546,7 +562,7 @@ elif page == "Resultados: Árboles de desición":
     st.divider()
 
     # Sección de las graficas
-    st.subheader("Visualización detallada escenario de Árboles de desición")
+    st.subheader("Visualización detallada escenario de Árboles de decisión")
 
     with st.expander("Ver gráficas para DT con datos desbalanceados"):
         try:
@@ -556,13 +572,20 @@ elif page == "Resultados: Árboles de desición":
         except FileNotFoundError:
             st.warning("No se encontró el archivo 'fig_dt_unbalanced.pkl'.")
 
-    with st.expander("Ver Gráficas para árboles de desición con RandomOverSampler"):
+    with st.expander("Ver Gráficas para árboles de decisión con RandomOverSampler"):
         try:
             with open('modelos_dashboard_dt/fig_dt_RandOvSamp.pkl', 'rb') as f:
                 fig = pickle.load(f)
                 st.pyplot(fig)
         except FileNotFoundError:
             st.warning("No se encontró el archivo 'fig_dt_RandOvSamp.pkl'.")
+    with st.expander("Ver Gráficas para árboles de decisión con SMOTE"):
+        try:
+            with open('modelos_dashboard_dt/fig_dt_SMOTE.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'fig_dt_SMOTE.pkl'.")
 
     with st.expander("Ver gráficas para DT balanceado (Top 4)"):
         try:
@@ -572,6 +595,9 @@ elif page == "Resultados: Árboles de desición":
         except FileNotFoundError:
             st.warning("No se encontró el archivo 'fig_dt_RandOvSamp_best4.pkl'.")
 
+    st.markdown("En árboles de decisión, ambas técnicas de balanceo de clases no logran mejorar el rendimientodel modelo, y generan un gran" \
+    " sobreajuste. Utilizando únicamente las 4 mejores características observamos un mejor rendimiento. ")
+
 elif page == "Resultados: Random Forest":
     st.header("Random Forest")
     st.write("""
@@ -579,24 +605,27 @@ elif page == "Resultados: Random Forest":
     A continuación, comparamos su rendimiento en tres casos:
     1.  **Datos Desbalanceados:**
     2.  **Balanceo con RandomOverSampler:**
-    3.  **4 mejores características usando RandomOverSampler :** 
+    3.  **Balanceo con SMOTE**       
+    4.  **4 mejores características usando RandomOverSampler :** 
     """)
 
     # Cargar datos
     try:
         metrics_rf_unbalanced = pd.read_csv('modelos_dashboard_RandForest/metrics_RandForest_unbalanced.csv', index_col=0)
         metrics_rf_ros = pd.read_csv('modelos_dashboard_RandForest/metrics_RandForest_RandOvSampler.csv', index_col=0)
+        metrics_rf_smote = pd.read_csv('modelos_dashboard_RandForest/metrics_RandForest_SMOTE.csv', index_col=0)
         metrics_rf_best4 = pd.read_csv('modelos_dashboard_RandForest/metrics_RandForest_RandOvSampler_best4.csv', index_col=0)
 
         # concatenar graficas
         summary_rf_df = pd.concat([
             metrics_rf_unbalanced['test'],
             metrics_rf_ros['test'],
+            metrics_rf_smote['test'],
             metrics_rf_best4['test']
         ], axis=1)
         
         # Renombramos las columnas para mayor claridad
-        summary_rf_df.columns = ['RF Desbalanceado', 'RF con RandomOverSampler', 'RF con RandomOverSampler (Top 4)']
+        summary_rf_df.columns = ['RF Desbalanceado', 'RF con RandomOverSampler', 'RF con SMOTE','RF con RandomOverSampler (Top 4)']
 
         st.subheader("Tabla comparativa de rendimiento de Random Forest (en Test)")
         st.dataframe(summary_rf_df)
@@ -628,7 +657,13 @@ elif page == "Resultados: Random Forest":
                 st.pyplot(fig)
         except FileNotFoundError:
             st.warning("No se encontró el archivo 'fig_RandForest_RandOvSampler.pkl'.")
-
+    with st.expander("Ver Gráficas para RF con SMOTE"):
+        try:
+            with open('modelos_dashboard_RandForest/fig_RandForest_SMOTE.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'fig_RandForest_SMOTE.pkl'.")
     with st.expander("Ver gráficas para RF balanceado (Top 4)"):
         try:
             with open('modelos_dashboard_RandForest/fig_RandForest_RandOvSampler_best4.pkl', 'rb') as f:
@@ -636,6 +671,10 @@ elif page == "Resultados: Random Forest":
                 st.pyplot(fig)
         except FileNotFoundError:
             st.warning("No se encontró el archivo 'fig_RandForest_RandOvSampler_best4.pkl'.")
+    st.markdown("Observamos que, despues de tratar el desbalance con dos técnias distintas, los modelos se sobreajustan. Las técnicas " \
+    "de balanceo de clases no ayudan a que Random Forest pueda aprender sobre los pacientes positivos." \
+    "Esperaríamos que SMOTE ayudará a generar mayor conocimiento que Random Over Sampler,  ya que genera muestras sintÉticas similares, dotando a los datos de mayor variedad," \
+    "pero observamos un mayor sobreajuste con esta técnica.")
 
 elif page == "Resultados: Perceptrón multicapa":
     st.header("Redes neuronales")
@@ -701,6 +740,159 @@ elif page == "Resultados: Perceptrón multicapa":
                 st.pyplot(fig)
         except FileNotFoundError:
             st.warning("No se encontró el archivo 'fig_NN_RandOvSampler_best4.pkl'.")
+
+elif page == "Resultados: Random Forest balanceado":
+    st.header("RF balanceado")
+    st.write("""
+
+    A continuación, comparamos su rendimiento en los siguientes casos:
+    1.  ** Todas las características:**
+    2.  
+
+    """)
+
+    # Cargar datos
+    try:
+        metrics_nn_unbalanced = pd.read_csv('BalancedRandomForest/metrics_balancedRandomForest.csv', index_col=0)
+        #metrics_nn_ros = pd.read_csv('BalancedRandomForest/metrics_NN_RandOvSampler.csv', index_col=0)
+        #metrics_nn_best4 = pd.read_csv('modelos_dashboard_redes/metrics_NN_RandOvSampler_best4.csv', index_col=0)
+
+        # concatenar graficas
+        summary_nn_df = pd.concat([
+            metrics_nn_unbalanced['test']#,
+            #metrics_nn_ros['test'],
+            #metrics_nn_best4['test']
+        ], axis=1)
+        
+        # Renombramos las columnas para mayor claridad
+        summary_nn_df.columns = ['Balanced Random Forest']
+
+        st.subheader("Tabla comparativa de rendimiento de BAlanced Random Forest (en Test)")
+        st.dataframe(summary_nn_df)
+
+        st.markdown("""
+        
+        """)
+
+    except FileNotFoundError:
+        st.error("Error al cargar los archivos de métricas de NN. Asegúrate de que todos los archivos .csv estén en tu repositorio de GitHub.")
+
+    st.divider()
+
+    # Sección de las graficas
+    st.subheader("Visualización detallada escenario de Balanced Random Forest")
+
+    with st.expander("Ver gráficas para Balanced Random Forest"):
+        try:
+            with open('BalancedRandomForest/fig_balancedRandomForest.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'fig_balancedRandomForest.pkl'.")
+
+    #with st.expander("Ver Gráficas para PM con RandomOverSampler"):
+    #    try:
+    #        with open('modelos_dashboard_redes/fig_NN_RandOvSampler.pkl', 'rb') as f:
+    #            fig = pickle.load(f)
+    #            st.pyplot(fig)
+    #    except FileNotFoundError:
+    #        st.warning("No se encontró el archivo 'fig_NN_RandOvSampler.pkl'.")
+
+    #with st.expander("Ver gráficas para Perceptrón multicapa balanceado (Top 4)"):
+    #    try:
+    #        with open('modelos_dashboard_redes/fig_NN_RandOvSampler_best4.pkl', 'rb') as f:
+    #            fig = pickle.load(f)
+    #            st.pyplot(fig)
+    #    except FileNotFoundError:
+    #        st.warning("No se encontró el archivo 'fig_NN_RandOvSampler_best4.pkl'.")
+    st.markdown("Balanced Random Forest utiliza técnicas de submuestreo aleatorio para que cada árbol entrene con una muestra de datos equilibrada.\n" \
+    "* En este caso, esperamos reducir el sobreajuste que presento Random Forest original con RandomOverSampler (AP=0.82 en train vs AP= 0.45 en test)\n" \
+    "* Resultado: Se redujo el sobre ajuste (AP=0.72 vs AP=0.45), pero nose mejoro en test.")
+
+elif page == "Resultados: XGBoost":
+    st.header("XGBoost")
+    st.write("""
+
+    A continuación, comparamos su rendimiento en tres casos:
+    1.  **Datos Desbalanceados:**
+    2.  **Balanceo con "pos_class_weight":**
+    3.  **4 mejores características:** 
+    """)
+
+    # Cargar datos
+    try:
+        metrics_nn_unbalanced = pd.read_csv('xgboost/metrics_xgboost_unbalanced.csv', index_col=0)
+        metrics_nn_ros = pd.read_csv('xgboost/metrics_xgboost_balanced.csv', index_col=0)
+        metrics_nn_best4 = pd.read_csv('xgboost/metrics_xgboost_balanced_best4.csv', index_col=0)
+
+        # concatenar graficas
+        summary_nn_df = pd.concat([
+            metrics_nn_unbalanced['test'],
+            metrics_nn_ros['test'],
+            metrics_nn_best4['test']
+        ], axis=1)
+        
+        # Renombramos las columnas para mayor claridad
+        summary_nn_df.columns = ['XGBoost Desbalanceado', 'XGBoost Balanceado con pos_class_weight', 'XGBoost (Top 4)']
+
+        st.subheader("Tabla comparativa de rendimiento XGBoosy (en Test)")
+        st.dataframe(summary_nn_df)
+
+        st.markdown("""
+        
+        """)
+
+    except FileNotFoundError:
+        st.error("Error al cargar los archivos de métricas de NN. Asegúrate de que todos los archivos .csv estén en tu repositorio de GitHub.")
+
+    st.divider()
+
+    # Sección de las graficas
+    st.subheader("Visualización detallada escenario de  XGBoost")
+
+    with st.expander("Ver gráficas para XGBoost con datos desbalanceados"):
+        try:
+            with open('xgboost/fig_xgboost_unbalanced.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'fig_xgboost_unbalanced.pkl'.")
+
+    st.markdown("El modelo sin tratar el balance de los datos, presenta un sobreajuste. Se observa un AP de 0.42 para test y 0.68 para train.")
+
+    with st.expander("Ver Gráficas para XGBoost balanceado"):
+        try:
+            with open('xgboost/fig_xgboost_balanced.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'fig_xgboost_balanced.pkl'.")
+    
+    st.markdown("Manejando el desbalance asignandole un peso a las observaciones positivas, se reduce el sobreajuste, ademas de subir el AP a 0.46 en test.")
+
+    with st.expander("Ver gráficas para XGBoost (Top 4)"):
+        try:
+            with open('xgboost/fig_xgboost_balanced_best4.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'fig_xgboost_balanced_best4.pkl'.")
+
+    st.markdown("Al utilizar únicamente las mejores 4 cracterísticas, la diferencia entre train y test disminuye, pero también lo hace AP.")
+
+elif page == "Conclusiones Generales":
+    st.header("Conclusiones:")
+
+    st.markdown("El proyecto tuvo como objetvo examinar los datos de BRFSS 2015 para ver cuales son los mayores factores de reisgo en diabetes, y " \
+    " probar si con está información es posible crear un modelo que clasifique a los pacientes adecuadamente. Concluimso con los siguientes puntos: \n" \
+    "* Ningún clasificador logró superar el área bajo la curva de Precision-recall de 0.5, incluso utilizando técnicas de balanceo como Random Over Sampler o SMOTE.\n" \
+    "* Se probaron clasificadores que manejan el desbalance de clases, como Balanced Random Forest y XGboost, siendo el segundo el de mejor desempeño, ya que redujo el sobreajuste.\n" \
+    "*  Todos los clasificadores, al aplicar técnicas de balanceo, mejoran en Recall, por lo que hay una reducción de Falsos negativos.\n" \
+    "* Los factores de riesgo que más influyen son el BMI, la edad,, ingresos y genHlth. \n\n" \
+    "Es necesario recolectar más datos para poder dotar de mayor capacidad de generalización sobre la clase positiva a los modelos."
+    
+    )
+
 
 
     # --- Mostrando los Datos ---
