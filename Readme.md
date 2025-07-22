@@ -6,3 +6,14 @@ Objetivo de trabajar con este dataset:
 * ¿La información recopilada por la BRFSS puede predecir pacientes con diabetes ?
 
 * ¿Cuáles son las variables más importantes para porder clasificar a los pacientes respecto a la diabetes?
+
+NOTEBOOKS IMPORTANTES:
+
+* exploracion_de_datos.ipynb: Análisis exploratorio de datos.
+* balanceo_pruebas_varios_metodos.ipynb: Prueba de distintas técnicas de valanceo, como RandomOverSampler, SMOTE, SMOTETomek, NearMiss, etc.
+* balanceoRandomOv_y_seleccionExRegTree.ipynb: Selección de mejores características despues de balancear.
+* modelos_dashboard_dt.ipynb: Pruebas con DecisionTrees.
+* modelos_dashboard_RandForest.ipynb: Pruebas con RandomForestClassifier.
+* modelos_dashboard_redes.ipynb: Pruebas con Perceptron Multicapa.
+* balancedRandomForest.ipynb: Pruebas con Balanced Random Forest.
+* XGBoost: Pruebas con xgboost.

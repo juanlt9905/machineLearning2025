@@ -10,8 +10,8 @@ import pickle
 
 #Cargar Datos
 
-datos_diabetes = pd.read_csv('datasets/diabetes_012_health_indicators_BRFSS2015.csv')
-#datos_diabetes = pd.read_csv('/home/juan/machineLearning2025/datasets/diabetes_012_health_indicators_BRFSS2015.csv')
+#datos_diabetes = pd.read_csv('datasets/diabetes_012_health_indicators_BRFSS2015.csv')
+datos_diabetes = pd.read_csv('/home/juan/machineLearning2025/datasets/diabetes_012_health_indicators_BRFSS2015.csv')
 #Crear la columna diabetes_01 que unifique prediabetes con diabetes
 datos_diabetes['diabetes_01'] = datos_diabetes['Diabetes_012']
 datos_diabetes['diabetes_01'] = datos_diabetes['diabetes_01'].replace(2,1)
@@ -393,17 +393,24 @@ if page=="Balanceo de clases":
     st.header("Comparación de Técnicas de balanceo")
     
     metrics_unbalanced = pd.read_csv('metrics_logreg_unbalanced.csv', index_col=0)
+    metrics_nearmiss = pd.read_csv('metrics_logreg_NearMiss.csv', index_col=0)
     metrics_smote = pd.read_csv('metrics_logreg_SMOTE.csv', index_col=0)
+    metrics_smote_samp_5= pd.read_csv('metrics_logreg_SMOTE_samp_0,5.csv', index_col=0)
     metrics_ros = pd.read_csv('metrics_logreg_RandomOverSampler.csv', index_col=0)
+    metrics_smotetomek = pd.read_csv('metrics_logreg_SMOTETomek.csv', index_col=0)
 
     # --- Creación de la Tabla Comparativa ---
     summary_df = pd.concat([
         metrics_unbalanced['test'],
+        metrics_nearmiss['test'],
         metrics_smote['test'],
-        metrics_ros['test']
+        metrics_smote_samp_5['test'],
+        metrics_ros['test'],
+        metrics_smotetomek['test']
+
     ], axis=1)
         
-    summary_df.columns = ['Datos Desbalanceados', 'SMOTE', 'RandomOverSampler']
+    summary_df.columns = ['Datos Desbalanceados','NearMiss', 'SMOTE', 'SMOTE (sample_strategy=0.5)','RandomOverSampler', 'SMOTETomek']
 
     st.subheader("Tabla Comparativa de Rendimiento (en Test)")
     st.markdown("Se implementan algunas técnicas de balanceo, y se evalua utilizando una Regresión Logística.")
@@ -426,6 +433,15 @@ if page=="Balanceo de clases":
         except FileNotFoundError:
             st.warning("No se encontró el archivo 'figure_logreg_unbalanced.pkl'.")
 
+    st.markdown("*Near Miss es una técnica de submuestreo de la clase mayoritaria, elimina las observaciones mas cercanas a las observaciones de la clase minoritaria.")
+    with st.expander("Ver Gráficas para NearMiss"):
+        try:
+            with open('fig_logreg_NearMiss.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'figure_logreg_NearMiss.pkl'.")
+    st.markdown("SMOTE crea elementos sintéticos de la clase minoritaria.")
     with st.expander("Ver Gráficas para SMOTE"):
         try:
             with open('fig_logreg_SMOTE.pkl', 'rb') as f:
@@ -433,7 +449,15 @@ if page=="Balanceo de clases":
                 st.pyplot(fig)
         except FileNotFoundError:
             st.warning("No se encontró el archivo 'figure_logreg_SMOTE.pkl'.")
-
+    st.markdown("El parámetro sample_strategy = 0.5, hace que el número de elementos de la clase minoritaria sea la mitad de la clase mayoritaria.")
+    with st.expander("Ver Gráficas para SMOTE (sample_strategy=0.5)"):
+        try:
+            with open('fig_logreg_SMOTE_samp_0,5.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'figure_logreg_SMOTE_samp_0,5.pkl'.")
+    st.markdown("RandomOverSampler replica observaciones de la clase minoritaria ya existentes.")
     with st.expander("Ver Gráficas para RandomOverSampler"):
         try:
             with open('fig_logreg_RandomOverSampler.pkl', 'rb') as f:
@@ -441,12 +465,21 @@ if page=="Balanceo de clases":
                 st.pyplot(fig)
         except FileNotFoundError:
             st.warning("No se encontró el archivo 'fig_logreg_RandomOverSampler.pkl'.")
+    st.markdown("SMOTETomek crea elementos sintéticos de la clase minoritaria, y elimina los elementos de la clase mayoritaria cercanos a elementos de la clase minoritaria.")
+    with st.expander("Ver Gráficas para SMOTETomek"):
+        try:
+            with open('fig_logreg_SMOTETomek.pkl', 'rb') as f:
+                fig = pickle.load(f)
+                st.pyplot(fig)
+        except FileNotFoundError:
+            st.warning("No se encontró el archivo 'figure_logreg_SMOTETomek.pkl'.")
 
     st.markdown("Observaciones:\n\n" \
                 
                 "* Tanto en SMOTE como en Random Over Sampler, se observa un sobreentrenamiento en las gráficas de F1 y PRC, indicando que no se puede generalizar los patrones de la clase minoritaria.\n\n" \
                 "* El umbral de decisión de 0.5 (punto rojo) se desplazó a la derecha en la curva de PRC, para ambos metódos de balanceo, es decir, aumento recall en ambos casos." \
-                "Esto es un indicador de que disminuyeron los Falsos negativos, un tipo de error que es importante mantener controlado en los casos médicos. ")
+                "Esto es un indicador de que disminuyeron los Falsos negativos, un tipo de error que es importante mantener controlado en los casos médicos.\n\n" \
+                "*Se observa un mejor recall en RandomOverSampler y SMOTE. ")
 
 elif page=="Importancia de características":
 
